@@ -38,7 +38,8 @@ CITIES_V2 = {
         "timezone": "Asia/Karachi",
         "name": "Karachi",
         "country": "Pakistan",
-        "parquet_name": "Karachi"
+        "parquet_name": "Karachi",
+        "base_aqi": 65, "base_temp": 27.5, "base_pm25": 18.0, "base_pm10": 35.0, "base_wind": 16.0, "base_hum": 60
     },
     "Chicago": {
         "lat": 41.8781,
@@ -46,7 +47,8 @@ CITIES_V2 = {
         "timezone": "America/Chicago",
         "name": "Chicago",
         "country": "United States",
-        "parquet_name": "Chicago"
+        "parquet_name": "Chicago",
+        "base_aqi": 48, "base_temp": 21.0, "base_pm25": 11.0, "base_pm10": 22.0, "base_wind": 14.0, "base_hum": 50
     },
     "Sydney": {
         "lat": -33.8688,
@@ -54,7 +56,8 @@ CITIES_V2 = {
         "timezone": "Australia/Sydney",
         "name": "Sydney",
         "country": "Australia",
-        "parquet_name": "Sydney"
+        "parquet_name": "Sydney",
+        "base_aqi": 38, "base_temp": 18.0, "base_pm25": 8.0, "base_pm10": 16.0, "base_wind": 18.0, "base_hum": 55
     },
     "Austria": {
         "lat": 48.2082,
@@ -62,7 +65,8 @@ CITIES_V2 = {
         "timezone": "Europe/Vienna",
         "name": "Vienna",
         "country": "Austria",
-        "parquet_name": "Austria"
+        "parquet_name": "Austria",
+        "base_aqi": 32, "base_temp": 19.5, "base_pm25": 7.0, "base_pm10": 14.0, "base_wind": 12.0, "base_hum": 48
     },
     "Vienna": {
         "lat": 48.2082,
@@ -70,7 +74,8 @@ CITIES_V2 = {
         "timezone": "Europe/Vienna",
         "name": "Vienna",
         "country": "Austria",
-        "parquet_name": "Austria"
+        "parquet_name": "Austria",
+        "base_aqi": 32, "base_temp": 19.5, "base_pm25": 7.0, "base_pm10": 14.0, "base_wind": 12.0, "base_hum": 48
     }
 }
 
@@ -122,52 +127,62 @@ def get_parquet_fallback(city_name: str):
     pq_name = city_cfg.get("parquet_name", city_name)
     
     if parquet_path.exists():
-        df = pd.read_parquet(parquet_path)
-        city_df = df[df["city"] == pq_name].copy()
-        if not city_df.empty:
-            city_df["time"] = pd.to_datetime(city_df["time"], utc=True)
-            city_df = city_df.sort_values("time").reset_index(drop=True)
-            recent_df = city_df.tail(168).copy() # Last 7 days
-            last_row = recent_df.iloc[-1]
-            
-            current_obs = {
-                "aqi": int(round(last_row["aqi"])),
-                "pm2_5": round(float(last_row.get("pm2_5", 15.0)), 1),
-                "pm10": round(float(last_row.get("pm10", 25.0)), 1),
-                "no2": round(float(last_row.get("no2", 10.0)), 1),
-                "ozone": round(float(last_row.get("ozone", 35.0)), 1),
-                "so2": round(float(last_row.get("so2", 5.0)), 1),
-                "co": round(float(last_row.get("co", 200.0)), 1),
-                "temperature": round(float(last_row.get("temperature", 25.0)), 1),
-                "humidity": int(round(last_row.get("humidity", 50))),
-                "feels_like": round(float(last_row.get("temperature", 25.0)), 1),
-                "wind_speed": round(float(last_row.get("wind_speed", 15.0)), 1),
-                "weather_code": int(last_row.get("weather_code", 0)),
-                "pressure": round(float(last_row.get("pressure", 1013.0)), 1)
-            }
-            return recent_df, current_obs
+        try:
+            df = pd.read_parquet(parquet_path)
+            city_df = df[df["city"] == pq_name].copy()
+            if not city_df.empty:
+                city_df["time"] = pd.to_datetime(city_df["time"], utc=True)
+                city_df = city_df.sort_values("time").reset_index(drop=True)
+                recent_df = city_df.tail(168).copy() # Last 7 days
+                last_row = recent_df.iloc[-1]
+                
+                current_obs = {
+                    "aqi": int(round(last_row["aqi"])),
+                    "pm2_5": round(float(last_row.get("pm2_5", 15.0)), 1),
+                    "pm10": round(float(last_row.get("pm10", 25.0)), 1),
+                    "no2": round(float(last_row.get("no2", 10.0)), 1),
+                    "ozone": round(float(last_row.get("ozone", 35.0)), 1),
+                    "so2": round(float(last_row.get("so2", 5.0)), 1),
+                    "co": round(float(last_row.get("co", 200.0)), 1),
+                    "temperature": round(float(last_row.get("temperature", 25.0)), 1),
+                    "humidity": int(round(last_row.get("humidity", 50))),
+                    "feels_like": round(float(last_row.get("temperature", 25.0)), 1),
+                    "wind_speed": round(float(last_row.get("wind_speed", 15.0)), 1),
+                    "weather_code": int(last_row.get("weather_code", 0)),
+                    "pressure": round(float(last_row.get("pressure", 1013.0)), 1)
+                }
+                return recent_df, current_obs
+        except Exception as pe:
+            print(f"Parquet load notice for {city_name}:", pe)
 
-    # Default baseline if file missing
+    # City-specific fallback baseline
+    b_aqi = city_cfg.get("base_aqi", 65)
+    b_temp = city_cfg.get("base_temp", 25.0)
+    b_pm25 = city_cfg.get("base_pm25", 15.0)
+    b_pm10 = city_cfg.get("base_pm10", 30.0)
+    b_wind = city_cfg.get("base_wind", 15.0)
+    b_hum = city_cfg.get("base_hum", 55)
+
     dates = pd.date_range(end=pd.Timestamp.now(tz="UTC"), periods=168, freq="h")
     dummy_df = pd.DataFrame({
         "time": dates,
         "city": city_name,
-        "aqi": [65] * 168,
-        "pm2_5": [18.0] * 168,
-        "pm10": [35.0] * 168,
+        "aqi": [b_aqi] * 168,
+        "pm2_5": [b_pm25] * 168,
+        "pm10": [b_pm10] * 168,
         "no2": [12.0] * 168,
         "ozone": [40.0] * 168,
         "so2": [6.0] * 168,
         "co": [220.0] * 168,
-        "temperature": [26.0] * 168,
-        "humidity": [55] * 168,
-        "wind_speed": [14.0] * 168,
+        "temperature": [b_temp] * 168,
+        "humidity": [b_hum] * 168,
+        "wind_speed": [b_wind] * 168,
         "pressure": [1012.0] * 168,
         "weather_code": [0] * 168
     })
     curr_obs = {
-        "aqi": 65, "pm2_5": 18.0, "pm10": 35.0, "no2": 12.0, "ozone": 40.0, "so2": 6.0, "co": 220.0,
-        "temperature": 26.0, "humidity": 55, "feels_like": 27.0, "wind_speed": 14.0, "weather_code": 0, "pressure": 1012.0
+        "aqi": b_aqi, "pm2_5": b_pm25, "pm10": b_pm10, "no2": 12.0, "ozone": 40.0, "so2": 6.0, "co": 220.0,
+        "temperature": b_temp, "humidity": b_hum, "feels_like": b_temp + 1.5, "wind_speed": b_wind, "weather_code": 0, "pressure": 1012.0
     }
     return dummy_df, curr_obs
 
@@ -195,17 +210,17 @@ def fetch_live_city_data_v2(city_name: str, past_days: int = 7):
         
         if "us_aqi" in aq_curr_res or "temperature_2m" in w_curr_res:
             current_obs = {
-                "aqi": int(round(aq_curr_res.get("us_aqi", 65))),
-                "pm2_5": round(float(aq_curr_res.get("pm2_5", 15.0)), 1),
-                "pm10": round(float(aq_curr_res.get("pm10", 25.0)), 1),
+                "aqi": int(round(aq_curr_res.get("us_aqi", city.get("base_aqi", 65)))),
+                "pm2_5": round(float(aq_curr_res.get("pm2_5", city.get("base_pm25", 15.0))), 1),
+                "pm10": round(float(aq_curr_res.get("pm10", city.get("base_pm10", 25.0))), 1),
                 "no2": round(float(aq_curr_res.get("nitrogen_dioxide", 10.0)), 1),
                 "ozone": round(float(aq_curr_res.get("ozone", 35.0)), 1),
                 "so2": round(float(aq_curr_res.get("sulphur_dioxide", 5.0)), 1),
                 "co": round(float(aq_curr_res.get("carbon_monoxide", 200.0)), 1),
-                "temperature": round(float(w_curr_res.get("temperature_2m", 25.0)), 1),
-                "humidity": int(round(w_curr_res.get("relative_humidity_2m", 50))),
-                "feels_like": round(float(w_curr_res.get("apparent_temperature", w_curr_res.get("temperature_2m", 25.0))), 1),
-                "wind_speed": round(float(w_curr_res.get("wind_speed_10m", 15.0)), 1),
+                "temperature": round(float(w_curr_res.get("temperature_2m", city.get("base_temp", 25.0))), 1),
+                "humidity": int(round(w_curr_res.get("relative_humidity_2m", city.get("base_hum", 50)))),
+                "feels_like": round(float(w_curr_res.get("apparent_temperature", w_curr_res.get("temperature_2m", city.get("base_temp", 25.0)))), 1),
+                "wind_speed": round(float(w_curr_res.get("wind_speed_10m", city.get("base_wind", 15.0))), 1),
                 "weather_code": int(w_curr_res.get("weather_code", 0)),
                 "pressure": round(float(w_curr_res.get("surface_pressure", 1013.0)), 1)
             }
