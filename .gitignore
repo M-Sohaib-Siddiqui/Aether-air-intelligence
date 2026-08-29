@@ -1,0 +1,39 @@
+# Environment & Secrets
+.env
+*.env
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*.class
+*.so
+.Python
+
+# Distribution / Packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv
+
+# IDEs & System
+.idea/
+.vscode/
+.DS_Store
+*.log

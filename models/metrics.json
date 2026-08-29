@@ -1,0 +1,40 @@
+{
+  "best_model": "RandomForest",
+  "rmse": 10.152,
+  "mae": 7.137,
+  "r2": 0.847,
+  "feature_names": [
+    "pm2_5",
+    "pm10",
+    "no2",
+    "so2",
+    "co",
+    "ozone",
+    "temperature",
+    "humidity",
+    "wind_speed",
+    "pressure",
+    "hour",
+    "day_of_week",
+    "month",
+    "hour_sin",
+    "hour_cos",
+    "month_sin",
+    "month_cos",
+    "day_of_year_sin",
+    "day_of_year_cos",
+    "aqi_lag_1",
+    "aqi_lag_24",
+    "aqi_lag_168",
+    "aqi_rolling_mean_24",
+    "aqi_rolling_std_24",
+    "aqi_rolling_mean_168",
+    "aqi_rolling_std_168",
+    "aqi_change_rate_6h"
+  ],
+  "targets": [
+    "target_aqi_24h",
+    "target_aqi_48h",
+    "target_aqi_72h"
+  ]
+}
