@@ -1,0 +1,51 @@
+========================================================================
+DELIVERABLE 2: SCALABLE AUTOMATED PIPELINE DOCUMENTATION
+Platform: AETHER -- Atmospheric Intelligence Platform
+Developed by: Nuralis Labs
+Repository: https://github.com/M-Sohaib-Siddiqui/Aether-air-intelligence
+========================================================================
+
+1. OVERVIEW OF THE AUTOMATED MLOPS PIPELINE
+------------------------------------------------------------------------
+AETHER implements a 100% serverless, automated MLOps pipeline architecture. 
+The pipeline runs continuously in the background to ensure feature freshness, 
+automated model retraining, and cloud synchronization.
+
+2. PIPELINE COMPONENTS & CODE FILES
+------------------------------------------------------------------------
+a) Feature Extraction & Engineering Pipeline:
+   - File: src/feature_pipeline.py
+   - Schedule: Runs Hourly (cron: '0 * * * *')
+   - Description: Fetches real-time Open-Meteo REST telemetry, computes 27 
+     engineered features (lags, rolling averages, cyclical sine/cosine factors), 
+     and syncs to Hopsworks Cloud Feature Store (aqi_weather_fg v1).
+
+b) Model Training & Evaluation Pipeline:
+   - File: src/train.py
+   - Schedule: Runs Daily (cron: '0 0 * * *')
+   - Description: Fetches training datasets from Hopsworks Cloud Feature Store, 
+     evaluates candidate models (Random Forest, Ridge, PyTorch MLP), selects 
+     the winning model (R^2 = 0.85), serializes best_model.joblib, and updates 
+     the Hopsworks Model Registry.
+
+c) Historical Backfill Pipeline:
+   - File: src/backfill.py
+   - Description: Ingests 365 continuous days (35,136 hourly observations) across 
+     Karachi, Chicago, Sydney, and Vienna to populate the Hopsworks Feature Store.
+
+d) CI/CD Automation Workflow:
+   - File: .github/workflows/mlops_pipeline.yml
+   - Tool: GitHub Actions (Free Serverless CI/CD)
+   - Description: Automated runner executing hourly feature extraction and 
+     daily model retraining automatically.
+
+3. CLOUD INTEGRATIONS
+------------------------------------------------------------------------
+- Feature Store: Hopsworks Cloud (eu-west.cloud.hopsworks.ai)
+- Data Ingestion: Open-Meteo REST API (Free, high-frequency, no rate limits)
+- Hosting & Inference Server: Render Web Service (https://aether-air-intelligence.onrender.com)
+- CI/CD Runner: GitHub Actions
+
+========================================================================
+Developed by Nuralis Labs
+========================================================================
