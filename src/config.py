@@ -52,7 +52,7 @@ HOPSWORKS_HOST = os.getenv("HOPSWORKS_HOST", "eu-west.cloud.hopsworks.ai")
 
 # Voice Agent & 3D Globe Credentials
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "")
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "sk_425b65f04d7fbcf101fb54ee11fbfa1fbc8ebccf2b1d2afa")
 ELEVENLABS_VOICE_ID = os.getenv("ELEVENLABS_VOICE_ID", "P8NfsqD6Mj2lTFzuAccu")
 CESIUM_ION_ACCESS_TOKEN = os.getenv("CESIUM_ION_ACCESS_TOKEN", os.getenv("CESIUM_ION_TOKEN", ""))
 
