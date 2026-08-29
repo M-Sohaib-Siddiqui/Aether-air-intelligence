@@ -22,7 +22,7 @@ from src.explainability import get_shap_feature_importance
 
 app = Flask(__name__, static_folder="static")
 
-# In-Memory Cache (10 Minutes TTL per city to prevent Open-Meteo 429 rate limits)
+# In-Memory Cache (10 Minutes TTL per city to prevent Open-Meteo rate limits)
 DATA_CACHE = {} # city_name -> (timestamp, response_json)
 CACHE_TTL = 600 # 10 minutes
 
@@ -189,6 +189,7 @@ def get_parquet_fallback(city_name: str):
 def fetch_live_city_data_v2(city_name: str, past_days: int = 7):
     """
     Fetch live atmospheric data from Open-Meteo with automatic Parquet dataset fallback.
+    Fast 2.5s timeout prevents worker blocking on cloud services.
     """
     city = CITIES_V2.get(city_name, CITIES_V2["Karachi"])
     current_obs = {}
@@ -199,14 +200,14 @@ def fetch_live_city_data_v2(city_name: str, past_days: int = 7):
             "longitude": city["lon"],
             "current": ["temperature_2m", "relative_humidity_2m", "apparent_temperature", "wind_speed_10m", "weather_code", "surface_pressure"],
             "timezone": "auto"
-        }, headers=HTTP_HEADERS, timeout=4).json().get("current", {})
+        }, headers=HTTP_HEADERS, timeout=2.5).json().get("current", {})
         
         aq_curr_res = requests.get(AIR_QUALITY_API_URL, params={
             "latitude": city["lat"],
             "longitude": city["lon"],
             "current": ["us_aqi", "pm2_5", "pm10", "nitrogen_dioxide", "ozone", "sulphur_dioxide", "carbon_monoxide"],
             "timezone": "auto"
-        }, headers=HTTP_HEADERS, timeout=4).json().get("current", {})
+        }, headers=HTTP_HEADERS, timeout=2.5).json().get("current", {})
         
         if "us_aqi" in aq_curr_res or "temperature_2m" in w_curr_res:
             current_obs = {
@@ -236,7 +237,7 @@ def fetch_live_city_data_v2(city_name: str, past_days: int = 7):
             "forecast_days": 1,
             "timezone": "UTC"
         }
-        aq_resp = requests.get(AIR_QUALITY_API_URL, params=aq_params, headers=HTTP_HEADERS, timeout=4)
+        aq_resp = requests.get(AIR_QUALITY_API_URL, params=aq_params, headers=HTTP_HEADERS, timeout=2.5)
         aq_resp.raise_for_status()
         aq_df = pd.DataFrame(aq_resp.json().get("hourly", {}))
         aq_df["time"] = pd.to_datetime(aq_df["time"], utc=True)
@@ -256,7 +257,7 @@ def fetch_live_city_data_v2(city_name: str, past_days: int = 7):
             "forecast_days": 1,
             "timezone": "UTC"
         }
-        w_resp = requests.get(WEATHER_API_URL, params=w_params, headers=HTTP_HEADERS, timeout=4)
+        w_resp = requests.get(WEATHER_API_URL, params=w_params, headers=HTTP_HEADERS, timeout=2.5)
         w_resp.raise_for_status()
         w_df = pd.DataFrame(w_resp.json().get("hourly", {}))
         w_df["time"] = pd.to_datetime(w_df["time"], utc=True)
