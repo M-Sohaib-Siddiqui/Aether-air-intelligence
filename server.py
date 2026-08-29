@@ -613,14 +613,17 @@ def api_voice_briefing():
     else:
         briefing_text += "Air quality parameters are healthy. Outdoor activities are safe."
 
-    # ElevenLabs Neural Voice API call if key exists
-    if ELEVENLABS_API_KEY and len(ELEVENLABS_API_KEY) > 10:
+    # ElevenLabs Neural Voice API call
+    eleven_key = os.getenv("ELEVENLABS_API_KEY") or ELEVENLABS_API_KEY or "sk_425b65f04d7fbcf101fb54ee11fbfa1fbc8ebccf2b1d2afa"
+    eleven_voice = os.getenv("ELEVENLABS_VOICE_ID") or ELEVENLABS_VOICE_ID or "P8NfsqD6Mj2lTFzuAccu"
+    
+    if eleven_key and len(eleven_key) > 10:
         try:
-            tts_url = f"https://api.elevenlabs.io/v1/text-to-speech/{ELEVENLABS_VOICE_ID}"
+            tts_url = f"https://api.elevenlabs.io/v1/text-to-speech/{eleven_voice}"
             headers = {
                 "Accept": "audio/mpeg",
                 "Content-Type": "application/json",
-                "xi-api-key": ELEVENLABS_API_KEY
+                "xi-api-key": eleven_key
             }
             payload = {
                 "text": briefing_text,
@@ -637,8 +640,11 @@ def api_voice_briefing():
                     "status": "success",
                     "audio_b64": audio_b64,
                     "text": briefing_text,
+                    "script": briefing_text,
                     "provider": "elevenlabs"
                 })
+            else:
+                print("ElevenLabs API status:", res.status_code, res.text)
         except Exception as e:
             print("ElevenLabs Voice API Notice:", e)
 
