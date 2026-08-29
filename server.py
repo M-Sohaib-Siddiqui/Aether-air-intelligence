@@ -646,6 +646,7 @@ def api_voice_briefing():
     return jsonify({
         "status": "success",
         "text": briefing_text,
+        "script": briefing_text,
         "provider": "browser"
     })
 

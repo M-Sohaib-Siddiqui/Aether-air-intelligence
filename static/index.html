@@ -1981,14 +1981,15 @@
                     });
                 } else if ('speechSynthesis' in window) {
                     window.speechSynthesis.cancel();
-                    const utterance = new SpeechSynthesisUtterance(data.script);
+                    const textToSpeak = data.text || data.script || `Atmospheric briefing for ${city}. Air quality is monitored continuously.`;
+                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
                     utterance.rate = 0.95;
                     utterance.pitch = 1.0;
                     utterance.onend = () => { stopVoiceAssistant(); };
-                    utterance.onerror = () => { stopVoiceAssistant(); };
+                    utterance.onerror = (err) => { console.error("TTS error:", err); stopVoiceAssistant(); };
                     window.speechSynthesis.speak(utterance);
                 } else {
-                    alert(`🗣️ Aether Assistant: ${data.script}`);
+                    alert(`🗣️ Aether Assistant: ${data.text || data.script}`);
                     stopVoiceAssistant();
                 }
             } catch(e) {
